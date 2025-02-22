@@ -190,7 +190,7 @@ pipeline {
 		    // Make all software products available in bin/.
 		    sh 'mkdir -p bin/'
 		    withCredentials([file(credentialsId: 'skyhook-private-key', variable: 'SKYHOOK_IDENTITY'), string(credentialsId: 'skyhook-machine-private', variable: 'SKYHOOK_MACHINE')]) {
-			sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=true -o IdentityFile=$SKYHOOK_IDENTITY" OWLTools-Runner/target/owltools skyhook@$SKYHOOK_MACHINE:/home/skyhook/pipeline-neo/$BRANCH_NAME/bin/* ./bin/'
+			sh 'rsync -avz -e "ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=true -o IdentityFile=$SKYHOOK_IDENTITY" skyhook@$SKYHOOK_MACHINE:/home/skyhook/pipeline-neo/$BRANCH_NAME/bin/* ./bin/'
 		    }
 		    sh 'chmod +x bin/*'
 
