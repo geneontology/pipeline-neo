@@ -172,7 +172,7 @@ pipeline {
 	stage('Produce NEO') {
 	    agent {
 		docker {
-    		    image 'obolibrary/odkfull:v1.5.2'
+    		    image 'obolibrary/odkfull:v1.5.4'
 		    // Reset Jenkins Docker agent default to original
 		    // root.
 		    args '-u root:root'
@@ -292,15 +292,25 @@ pipeline {
 		}
             }
             steps {
-		///
-		/// Produce Solr index.
-		///
 
-                // sh 'ls /srv'
-                // sh 'ls /tmp'
+		// WARNING: MEGAHACK
+		sh 'echo \'nameserver 8.8.8.8\' > /etc/resolv.conf'
+		sh 'echo \'search lbl.gov\' >> /etc/resolv.conf'
+
+		// WARNING: MEGAHACK
+		// See attempts around: https://github.com/geneontology/pipeline/issues/407#issuecomment-2513461418
+		// Remove optimize.
+		sh 'cat /tmp/run-indexer.sh | sed "s/--solr-optimize//" > /tmp/run-indexer-no-opt.sh'
+		// Bump jetty timeout from 30s to 5m.
+		sh 'cat /etc/default/jetty9 | sed "s/Xmx3g/Xmx16g -Djetty.timeout=300000/" > /tmp/jetty9.tmp'
+		sh 'mv /tmp/jetty9.tmp /etc/default/jetty9'
+		// ^ mem up, but uneffective for timeout.
+		sh 'cat /etc/jetty9/start.ini | sed "s/http.timeout=300000/http.timeout=3000000/" > /tmp/start.ini.tmp'
+		sh 'mv /tmp/start.ini.tmp /etc/jetty9/start.ini'
 
 		// Build index into tmpfs.
-		sh 'bash /tmp/run-indexer.sh'
+		sh 'bash /tmp/run-indexer-no-opt.sh'
+		//sh 'bash /tmp/run-indexer.sh'
 
 		// Copy tmpfs Solr contents onto skyhook. Moving this
 		// earlier so we can use the index to identify
@@ -371,7 +381,7 @@ pipeline {
 	stage('Sanity 0') {
 	    agent {
 		docker {
-		    image 'obolibrary/odkfull:v1.2.22'
+		    image 'obolibrary/odkfull:v1.5.4'
 		    // Reset Jenkins Docker agent default to original
 		    // root.
 		    args '-u root:root'
